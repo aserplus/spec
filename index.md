@@ -48,7 +48,7 @@ of file transfer or published to a [Registry](#registry)
 A task; work.
 
 Ops are defined via a [Bundle](#bundle) containing an
-[op manifest](op-manifest.md).
+[op.yml file](op.yml-file.md).
 
 
 # Collection
@@ -57,7 +57,7 @@ One or more [op](#op)s, grouped together physically (via embedding)
 and/or logically (via reference).
 
 Collections are defined via a [Bundle](#bundle) containing a
-[collection manifest](collection-manifest.md).
+[collection.yml file](collection.yml-file.md).
 
 
 ## Default Collection
