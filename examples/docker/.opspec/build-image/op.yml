@@ -1,0 +1,13 @@
+name: build-image
+description: Builds the docker image
+inputs:
+  - { name: IMAGE_REF, description: Docker image reference (regex: `((registry/)?namespace/)?repo(:tag)?`) }
+  - { name: BUILD_CONTEXT, type: dir }
+run:
+  container:
+    image: docker:1.12.0
+    cmd: docker build -t $IMAGE_REF .
+    workDir: /workdir
+    mounts:
+      - name: BUILD_CONTEXT
+        path: /workdir

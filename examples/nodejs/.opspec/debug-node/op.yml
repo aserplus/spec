@@ -1,2 +1,15 @@
 name: debug-node
 description: Debugs the node app via remote debugging
+inputs:
+  - { name: APP_PKG, type: string }
+run:
+  container:
+    image: node:6.3.0
+    cmd: node --debug ./index.js
+    workDir: /opt/app
+    mounts:
+      - name: APP_PKG
+        path: /opt/app
+    ports:
+      - 3000
+      - 5858

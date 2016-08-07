@@ -1,6 +1,19 @@
 name: install-deps
-description: Performs an `npm install`
+description: installs npm packages
 inputs:
-  - name: NPM_CONFIG_REGISTRY
-    description: Registry npm will be configured to install from
-    isSecure: true
+  - { name: NPM_CONFIG_REGISTRY, isSecret: true }
+  - { name: NPM_PKG_FILE, type: file }
+  - { name: MODULES_DIR, description: Can be used for caching, type: dir }
+outputs:
+  - { name: MODULES_DIR, type: dir }
+run:
+  container:
+    image: node:6.3.0
+    cmd: npm install
+    env:
+      - name: NPM_CONFIG_REGISTRY
+    mounts:
+      - name: NPM_PKG_FILE
+        path: /workdir/package.json
+      - name: MODULES_DIR
+        path: /workdir/node_modules

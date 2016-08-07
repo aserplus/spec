@@ -25,9 +25,10 @@ attributes:
 Types:
 
 - [Container](#container-run-instruction)
-- [Sub Ops](#sub-ops-run-instruction)
+- [Parallel](#parallel-run-instruction)
+- [Serial](#serial-run-instruction)
 
-### Container Run Instruction
+## Container Run Instruction
 
 attributes
 
@@ -35,23 +36,53 @@ attributes
 |:----------|:-------------------------------|:------------------------|:---------|:--------|
 | container | Instruction to run a container | [Container](#container) | true     |         |
 
-### Sub Op Run Instruction
-
-attributes:
-
-| name       | description                                                      | schema                                  | required | default |
-|:-----------|:-----------------------------------------------------------------|:----------------------------------------|:---------|:--------|
-| isParallel | If the sub op must be run in parallel with the preceeding sub op | [bool](http://yaml.org/type/bool.html)  | false    | false   |
-| url        | Url of an op                                                     | [string](http://yaml.org/type/str.html) | true     |         |
-
-
-### Sub Ops Run Instruction
+## Serial Run Instruction
 
 attributes
 
-| name   | description                    | schema                                                                                          | required | default |
-|:-------|:-------------------------------|:------------------------------------------------------------------------------------------------|:---------|:--------|
-| subOps | Sub op run instructions to run | [sequence](http://yaml.org/type/seq.html) of [Sub Op Run Instruction](#sub-op-run-instruction)s | true     |         |
+| name   | description                              | schema                                                                  | required | default |
+|:-------|:-----------------------------------------|:------------------------------------------------------------------------|:---------|:--------|
+| serial | Sequence of \[bound] ops to run serially | [sequence](http://yaml.org/type/seq.html) of [Op Binding](#op-binding)s | true     |         |
+
+## Parallel Run Instruction
+
+attributes
+
+| name     | description                                 | schema                                                                  | required | default |
+|:---------|:--------------------------------------------|:------------------------------------------------------------------------|:---------|:--------|
+| parallel | Sequence of \[bound] ops to run in parallel | [sequence](http://yaml.org/type/seq.html) of [Op Binding](#op-binding)s | true     |         |
+
+### Op Binding
+
+attributes:
+
+| name | description         | schema                                                                          | required | default |
+|:-----|:--------------------|:--------------------------------------------------------------------------------|:---------|:--------|
+| ->   | Input bindings      | [sequence](http://yaml.org/type/seq.html) of [Input Binding](#input-binding)s   | false    |         |
+| op   | Reference to the op | [OP_REF](index.md#op_ref)                                                       | true     |         |
+| <-   | Output bindings     | [sequence](http://yaml.org/type/seq.html) of [Output Binding](#output-binding)s | false    |         |
+
+#### Input Binding
+
+A [string](http://yaml.org/type/str.html) matching regex
+`INPUT_PARAM(=CONTEXT_VAR|STRING)?`
+
+where:
+
+- `STRING` is a [string](http://yaml.org/type/str.html)
+- `=CONTEXT_VAR|STRING` is optional only when `INPUT_PARAM` and
+  `CONTEXT_VAR` have the same name.
+
+#### Output Binding
+
+A [string](http://yaml.org/type/str.html) matching regex
+`CONTEXT_VAR(=OUTPUT_PARAM|STRING)?`
+
+where:
+
+- `STRING` is a [string](http://yaml.org/type/str.html)
+- `=OUTPUT_PARAM|STRING` is optional only when `OUTPUT_PARAM` and
+  `CONTEXT_VAR` have the same name.
 
 ## Parameter
 
@@ -63,11 +94,12 @@ Types:
 
 attributes
 
-| name     | description                | schema                                    | required | default |
-|:---------|:---------------------------|:------------------------------------------|:---------|:--------|
-| type     | Type of parameter          | Name of a defined parameter type          | false    | String  |
-| isSecret | If the parameter is secret | [bool](http://yaml.org/type/bool.html)    | false    | false   |
-| name     | Name of the parameter      | [FILE_SAFE_NAME](index.md#file_safe_name) | true     |         |
+| name        | description                  | schema                                    | required | default |
+|:------------|:-----------------------------|:------------------------------------------|:---------|:--------|
+| type        | Type of parameter            | Name of a defined parameter type          | false    | String  |
+| description | Description of the parameter | [string](http://yaml.org/type/str.html)   | false    |         |
+| isSecret    | If the parameter is secret   | [bool](http://yaml.org/type/bool.html)    | false    | false   |
+| name        | Name of the parameter        | [FILE_SAFE_NAME](index.md#file_safe_name) | true     |         |
 
 ### Dir Parameter
 
@@ -91,24 +123,16 @@ additional attributes:
 
 attributes
 
-| name    | description                                                                                | schema                                                                      | required | default |
-|:--------|:-------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------|:---------|:--------|
-| image   | [MUST](index.md#mustmay) be a docker image reference (`[[registry/]namespace/]repo[:tag]`) | [string](http://yaml.org/type/str.html)                                     | true     |         |
-| mounts  | Mount points inside container                                                              | [sequence](http://yaml.org/types/seq.html) of[Mount Point](#mount-point)s   | false    |         |
-| ports   | Ports to bind                                                                              | [sequence](http://yaml.org/type/seq.html) of [Port Binding](#port-binding)s | false    |         |
-| process | Process to run                                                                             | [Process](#process)                                                         | true     |         |
-
-### Process
-
-attributes
-
 | name    | description                                             | schema                                                                                | required | default                      |
 |:--------|:--------------------------------------------------------|:--------------------------------------------------------------------------------------|:---------|:-----------------------------|
+| image   | Docker image to use                                     | [Docker Image Ref](index.md#docker_image_ref)                                         | true     |                              |
+| mounts  | Mount points inside container                           | [sequence](http://yaml.org/types/seq.html) of[Mount Point](#mount-point)s             | false    |                              |
+| ports   | Ports to bind                                           | [sequence](http://yaml.org/type/seq.html) of [Port Binding](#port-binding)s           | false    |                              |
 | cmd     | Executable to launch in the container and any args      | [sequence](http://yaml.org/type/seq.html) of [string](http://yaml.org/type/str.html)s | false    | the image’s ENTRYPOINT & CMD |
 | envVars | Additional env vars to set in the processes environment | [sequence](http://yaml.org/type/seq.html) of [Env Var](#env-var)s                     | false    | the image's ENV              |
 | workDir | Working directory of the process                        | [string](http://yaml.org/type/str.html)                                               | false    | the image's WORKDIR          |
 
-#### Env Var
+### Env Var
 
 attributes  
 
@@ -128,89 +152,11 @@ attributes
 
 ### Port Binding
 
-attributes
+[string](http://yaml.org/type/str.html) matching regex
+`[1-65535](-[1-65535])?`
 
-| name      | description               | schema                                       | required | default   |
-|:----------|:--------------------------|:---------------------------------------------|:---------|:----------|
-| startPort | Start port number to bind | integer between 0 and 65536                  | true     |           |
-| endPort   | End Port number to bind   | integer between 0 and 65536 and >= startPort | false     | startPort |
-| protocol  | Procol that will be bound | A Transport layer (Layer 4) protocol         | false    | tcp       |
+#### examples
 
+`8080-8090`
 
-# Examples
-
-```YAML
-name: npm-install
-description: installs npm packages
-inputs:
-- name: NPM_CONFIG_REGISTRY
-  description: Registry to use
-  isSecret: true
-- name: PKG_FILE
-  description: package.json file
-  type: file
-- name: MODULES_DIR
-  description: node_modules dir (required for caching)
-  type: dir
-outputs:
-- name: MODULES_DIR
-  description: resulting node_modules dir
-  type: dir
-run:
-  container:
-    image: docker
-    process: 
-      cmd: [npm,install]
-      env:
-      - name: NPM_CONFIG_REGISTRY    
-    mounts:
-    - name: PKG_FILE
-      path: /workdir/package.json
-    - name: MODULES_DIR
-      path: /workdir/node_modules
-```
-
-```YAML
-name: gen-docker-config-file
-description: generates a docker config file
-inputs:
-- name: DOCKER_PASSWORD
-  description: Password for docker registry
-  isSecret: true
-- name: DOCKER_USERNAME
-  description: Username for docker registry
-  isSecret: true
-outputs:
-- name: DOCKER_CONFIG_FILE
-  description: A docker config.json file
-  isSecret: true
-  type: file
-run:
-  container:
-    image: docker
-    process:
-      cmd: sudo docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-      envVars:
-      - name: DOCKER_PASSWORD
-      - name: DOCKER_USERNAME
-    mounts:
-    - name: DOCKER_CRED_FILE
-      path: /root/.docker/config.json
-```
-
-```YAML
-name: build-and-publish
-description: builds the docker image then pushes it to docker hub
-inputs:
-- name: DOCKER_PASSWORD
-  description: Password for docker registry
-  isSecret: true
-- name: DOCKER_USERNAME
-  description: Username for docker registry
-  isSecret: true
-run:
-  subOps
-    - url: build
-    - url: push-to-docker-hub
-```
 
